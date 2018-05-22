@@ -28,6 +28,22 @@ sub execute {
             $required_param{$p} = delete $self->{opt}{body}{$p};
         }
     }
+
+    my %query_param = %required_param;
+    while (my ($param, $value) = each %{ $self->{opt} }) {
+        next if $param eq 'body';
+
+        my $param_desc = $self->{doc}{parameters}{$param};
+        next if not $param_desc;
+
+        if ($param_desc->{location} eq 'query') {
+            if ($param_desc->{type} eq 'boolean') {
+                $value = $value ? 'true' : 'false';
+            }
+            $query_param{$param} = $value;
+        }
+    }
+
     $url =~ s/{([^}]+)}/uri_escape(delete $required_param{$1})/eg;
     my $uri = URI->new($url);
     my $request;
@@ -35,7 +51,7 @@ sub execute {
         $http_method eq 'PUT' ||
         $http_method eq 'PATCH' ||
         $http_method eq 'DELETE') {
-        $uri->query_form(\%required_param);
+        $uri->query_form(\%query_param);
         $request = HTTP::Request->new($http_method => $uri);
         # Some API's (ie: admin/directoryv1/groups/delete) require requests 
         # with an empty body section to be explicitly zero length.
@@ -48,7 +64,7 @@ sub execute {
     } elsif ($http_method eq 'GET') {
         my $body = $self->{opt}{body} || {};
         my %q = (
-            %required_param,
+            %query_param,
             %$body,
         );
         if ($arg->{key}) {
