@@ -17,6 +17,10 @@ use constant OAUTH2_TOKEN_LIFETIME_SECS => 3600;
 sub new {
     my ($self, $args) = @_;
 
+    if (index($args->{private_key}, "\n") == -1 and -f $args->{private_key}) {
+        $args->{private_key} = $self->_readfile($args->{private_key});
+    }
+
     # get an access token
     my $json_response = $self->_get_access_token($args);
 
@@ -31,7 +35,7 @@ sub _get_access_token {
     my ($self, $args) = @_;
 
     # fetch private key contents.
-    my $key_contents = $self->_readfile($args->{private_key});
+    my $key_contents = $args->{private_key};
 
     my $jwt_params = {
       iss => $args->{service_account_name},
