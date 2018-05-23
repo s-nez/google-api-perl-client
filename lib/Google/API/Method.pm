@@ -47,6 +47,7 @@ sub execute {
     $url =~ s/{([^}]+)}/uri_escape(delete $required_param{$1})/eg;
     my $uri = URI->new($url);
     my $request;
+    my $body = $self->{opt}{body} || {};
     if ($http_method eq 'POST' ||
         $http_method eq 'PUT' ||
         $http_method eq 'PATCH' ||
@@ -55,14 +56,13 @@ sub execute {
         $request = HTTP::Request->new($http_method => $uri);
         # Some API's (ie: admin/directoryv1/groups/delete) require requests 
         # with an empty body section to be explicitly zero length.
-        if (%{$self->{opt}{body}}) {
+        if (%$body) {
             $request->content_type('application/json');
-            $request->content($self->{json_parser}->encode($self->{opt}{body}));
+            $request->content($self->{json_parser}->encode($body));
         } else {
             $request->content_length(0);
         }
     } elsif ($http_method eq 'GET') {
-        my $body = $self->{opt}{body} || {};
         my %q = (
             %query_param,
             %$body,
