@@ -88,9 +88,15 @@ sub execute {
                 $arg->{auth_driver}->access_token);
         $response = $self->{ua}->request($request);
     }
+
+    my $error_handler = $arg->{error_handler};
+    if ($error_handler && $error_handler->is_recoverable_error($response)) {
+        $response = $error_handler->retry($request);
+    }
     unless ($response->is_success) {
         $self->_die_with_error($response);
     }
+
     if ($response->code == 204) {
         return 1;
     }
