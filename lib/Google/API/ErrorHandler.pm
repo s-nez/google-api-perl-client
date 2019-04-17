@@ -2,6 +2,7 @@ package Google::API::ErrorHandler;
 use strict;
 use warnings;
 use Carp;
+use Time::HiRes;
 
 sub new {
     my ($class, $param) = @_;
@@ -32,7 +33,7 @@ sub retry {
         $response = $self->{ua}->request($request);
 
         if ($self->is_recoverable_error($response)) {
-            sleep $delay->();
+            Time::HiRes::sleep($delay->());
             next;
         }
 
@@ -46,12 +47,8 @@ sub _make_delay {
     my ($delay) = @_;
 
     if (not defined $delay) {
-        my ($prev, $current) = (0, 1);
-        return sub {    # default to the Fibonacci sequence
-            my $new = $prev + $current;
-            ($prev, $current) = ($current, $new);
-            return $new;
-        };
+        my $x = 0;
+        return sub { return 2**$x++ + rand(1000) / 1000 };
     }
 
     return sub { return $delay } if $delay =~ /\A[0-9]+\z/;
