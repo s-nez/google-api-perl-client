@@ -94,7 +94,7 @@ sub _new_ua {
 sub _new_json_parser {
     my $class = shift;
     require JSON;
-    my $parser = JSON->new;
+    my $parser = JSON->new->utf8(1);
     return $parser;
 }
 
